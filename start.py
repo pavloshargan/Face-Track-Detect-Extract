@@ -55,6 +55,7 @@ def main():
                 logger.info('Video_name:{}'.format(video_name))
                 cam = cv2.VideoCapture(video_name)
                 c = 0
+                surgeon_id = 0
                 while True:
                     final_faces = []
                     addtional_attribute_list = []
@@ -112,33 +113,48 @@ def main():
                                     item_list = [cropped, score, dist_rate, high_ratio_variance, width_rate]
                                     addtional_attribute_list.append(item_list)
 
+
                             final_faces = np.array(face_list)
 
                     trackers = tracker.update(final_faces, img_size, directoryname, addtional_attribute_list, detect_interval)
 
                     c += 1
 
+
+                    
+                    if surgeon_id == 0:
+                        biggest_face_area = 0
+                        for d in trackers:
+                            d = d.astype(np.int32)
+                            curr_face_area = (d[2]-d[0])*(d[3]-d[1])
+                            if curr_face_area >= biggest_face_area:
+                                biggest_face_area = curr_face_area
+                                surgeon_id = d[4]
+
+
                     for d in trackers:
                         if not no_display:
                             d = d.astype(np.int32)
-                            cv2.rectangle(frame, (d[0], d[1]), (d[2], d[3]), colours[d[4] % 32, :] * 255, 3)
-                            if final_faces != []:
-                                cv2.putText(frame, 'ID : %d  DETECT' % (d[4]), (d[0] - 10, d[1] - 10),
-                                            cv2.FONT_HERSHEY_SIMPLEX,
-                                            0.75,
-                                            colours[d[4] % 32, :] * 255, 2)
-                                cv2.putText(frame, 'DETECTOR', (5, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.75,
-                                            (1, 1, 1), 2)
-                            else:
-                                cv2.putText(frame, 'ID : %d' % (d[4]), (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX,
-                                            0.75,
-                                            colours[d[4] % 32, :] * 255, 2)
+                            if d[4] == surgeon_id:
+                                cv2.rectangle(frame, (d[0], d[1]), (d[2], d[3]), colours[d[4] % 32, :] * 255, 3)
+                                if final_faces != []:
+                                    cv2.putText(frame, 'ID : %d  DETECT' % (d[4]), (d[0] - 10, d[1] - 10),
+                                                cv2.FONT_HERSHEY_SIMPLEX,
+                                                0.75,
+                                                colours[d[4] % 32, :] * 255, 2)
+                                    cv2.putText(frame, 'DETECTOR', (5, 45), cv2.FONT_HERSHEY_SIMPLEX, 0.75,
+                                                (1, 1, 1), 2)
+                                else:
+                                    cv2.putText(frame, 'ID : %d' % (d[4]), (d[0] - 10, d[1] - 10), cv2.FONT_HERSHEY_SIMPLEX,
+                                                0.75,
+                                                colours[d[4] % 32, :] * 255, 2)
 
                     if not no_display:
                         frame = cv2.resize(frame, (0, 0), fx=show_rate, fy=show_rate)
                         cv2.imshow("Frame", frame)
                         if cv2.waitKey(1) & 0xFF == ord('q'):
                             break
+                        # if cv2.waitKey(1) & 0xFF == ord('q'):
 
 
 def parse_args():
